@@ -623,16 +623,10 @@
                 const tile = document.createElement('div');
                 tile.className = 'letter-tile';
                 tile.textContent = letter;
-                    // disable native drag on touch devices to avoid conflicts
-                    const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints && navigator.maxTouchPoints > 0);
-                    tile.draggable = !isTouchDevice;
                 tile.dataset.letter = letter;
-                tile.dataset.originalIndex = index; 
                 tile.id = `tile-${index}-${letter}`;
                 
-                tile.addEventListener('dragstart', handleDragStart);
-                tile.addEventListener('dragend', () => { document.body.style.overflow = ''; });
-                // Pointer-based handlers for touch devices and mouse
+                // Only use pointer events - simpler and works on all devices
                 tile.addEventListener('pointerdown', handlePointerDown);
                 
                 tileTrayContainer.appendChild(tile);
@@ -671,224 +665,117 @@
         }
 
 
-        // --- Drag/Drop Handlers (Unchanged for core functionality) ---
-
-        function handleDragStart(e) {
-            // lock scrolling during native drag
-            document.body.style.overflow = 'hidden';
-            e.dataTransfer.setData('text/plain', e.target.dataset.letter);
-            e.dataTransfer.setData('sourceId', e.target.id);
-            setTimeout(() => e.target.style.opacity = '0.5', 0);
-            
-            const parentSlot = e.target.closest('.letter-slot');
-            if (parentSlot) {
-                const slotIndex = parseInt(parentSlot.dataset.index);
-                userLetters[slotIndex] = null;
-                // Remove the 'correct' class if the tile is moved out
-                e.target.classList.remove('correct');
-            }
-        }
-
-        function handleDragEnter(e) {
-            e.preventDefault();
-            if (e.target.classList.contains('letter-slot')) {
-                e.target.classList.add('hovered');
-            }
-        }
-
-        function handleDragLeave(e) {
-            if (e.target.classList.contains('letter-slot')) {
-                e.target.classList.remove('hovered');
-            }
-        }
-
-        function handleDragOver(e) {
-            e.preventDefault(); 
-        }
-
-        function handleDrop(e) {
-            e.preventDefault();
-            // restore scrolling
-            document.body.style.overflow = '';
-            const slot = e.target.closest('.letter-slot');
-
-            if (!slot) return;
-            
-            slot.classList.remove('hovered');
-
-            const draggedLetter = e.dataTransfer.getData('text/plain');
-            const sourceId = e.dataTransfer.getData('sourceId');
-            const draggedTile = document.getElementById(sourceId);
-            const slotIndex = parseInt(slot.dataset.index);
-
-            // 1. Return existing tile to the tray if the slot is occupied
-            if (slot.querySelector('.letter-tile')) {
-                const existingTile = slot.querySelector('.letter-tile');
-                tileTrayContainer.appendChild(existingTile);
-                existingTile.style.opacity = '1';
-                existingTile.classList.remove('correct'); // Remove hint/correct styling on return
-            }
-            
-            // 2. Handle the tile movement
-            if (draggedTile) {
-                slot.appendChild(draggedTile);
-                draggedTile.style.opacity = '1';
-                
-                // 3. Update the internal state
-                userLetters[slotIndex] = draggedLetter;
-                
-                // 4. Check for success
-                checkForSuccess();
-            }
-        }
-
-        // --- Pointer-based drag (for touch) ---
-        let activePointer = null;
-        let pointerTile = null;
-        let startX = 0, startY = 0;
+        // --- Simple Pointer-based drag (works on all devices) ---
+        // --- Simple Pointer-based drag (works on all devices) ---
+        let activeTile = null;
+        let offsetX = 0, offsetY = 0;
+        let originParent = null;
 
         function handlePointerDown(e) {
-            // Only left button / touch
+            // Ignore if not primary button/touch
             if (e.button && e.button !== 0) return;
+            
             e.preventDefault();
-            pointerTile = e.currentTarget;
-            // Lock page scroll while dragging on touch devices
-            document.documentElement.classList.add('no-scroll');
-            // record original parent slot (if any)
-            pointerTile._originSlot = pointerTile.closest('.letter-slot') || null;
-            // temporarily disable native drag to avoid conflicts
-            pointerTile._wasDraggable = pointerTile.draggable;
-            pointerTile.draggable = false;
-            pointerTile.setPointerCapture(e.pointerId);
-            activePointer = e.pointerId;
-            pointerTile.classList.add('dragging');
-            // record offset
-            const rect = pointerTile.getBoundingClientRect();
-            startX = e.clientX - rect.left;
-            startY = e.clientY - rect.top;
-            // move it to body for fixed positioning
-            document.body.appendChild(pointerTile);
-            updateTilePosition(e.clientX, e.clientY);
+            e.stopPropagation();
+            
+            activeTile = e.currentTarget;
+            
+            // Lock scrolling
+            document.body.style.overflow = 'hidden';
+            document.body.style.touchAction = 'none';
+            
+            // Record where this tile came from
+            originParent = activeTile.parentElement;
+            if (originParent.classList.contains('letter-slot')) {
+                const idx = parseInt(originParent.dataset.index);
+                userLetters[idx] = null;
+            }
+            
+            // Get initial position
+            const rect = activeTile.getBoundingClientRect();
+            offsetX = e.clientX - rect.left;
+            offsetY = e.clientY - rect.top;
+            
+            // Make it fixed position and draggable
+            activeTile.style.position = 'fixed';
+            activeTile.style.zIndex = '10000';
+            activeTile.style.width = rect.width + 'px';
+            activeTile.style.height = rect.height + 'px';
+            activeTile.style.left = (e.clientX - offsetX) + 'px';
+            activeTile.style.top = (e.clientY - offsetY) + 'px';
+            activeTile.style.pointerEvents = 'none';
+            activeTile.classList.add('dragging');
+            
+            // Move to body to escape parent constraints
+            document.body.appendChild(activeTile);
+            
+            // Listen for move and release
             window.addEventListener('pointermove', handlePointerMove);
             window.addEventListener('pointerup', handlePointerUp);
-            // prevent touchmove default to stop scrolling on some browsers
-            window.addEventListener('touchmove', preventDefaultTouch, { passive: false });
-        }
-
-        function updateTilePosition(clientX, clientY) {
-            if (!pointerTile) return;
-            pointerTile.style.left = (clientX - startX) + 'px';
-            pointerTile.style.top = (clientY - startY) + 'px';
-            pointerTile.style.width = pointerTile.offsetWidth + 'px';
+            window.addEventListener('pointercancel', handlePointerUp);
         }
 
         function handlePointerMove(e) {
-            if (e.pointerId !== activePointer) return;
+            if (!activeTile) return;
             e.preventDefault();
-            updateTilePosition(e.clientX, e.clientY);
+            
+            activeTile.style.left = (e.clientX - offsetX) + 'px';
+            activeTile.style.top = (e.clientY - offsetY) + 'px';
         }
 
         function handlePointerUp(e) {
-            if (e.pointerId !== activePointer) return;
-            try { pointerTile.releasePointerCapture(e.pointerId); } catch(e) {}
+            if (!activeTile) return;
+            
+            e.preventDefault();
+            
+            // Remove listeners
             window.removeEventListener('pointermove', handlePointerMove);
             window.removeEventListener('pointerup', handlePointerUp);
-            pointerTile.classList.remove('dragging');
-
-            // restore scrolling
-            document.documentElement.classList.remove('no-scroll');
-            window.removeEventListener('touchmove', preventDefaultTouch);
-
-            // prefer elementFromPoint for accurate detection
-            const el = document.elementFromPoint(e.clientX, e.clientY);
-            const dropSlot = el ? el.closest('.letter-slot') : null;
-            if (dropSlot) {
-                // if slot already has a tile, move it back to tray
-                const existing = dropSlot.querySelector('.letter-tile');
-                if (existing && existing !== pointerTile) {
-                    tileTrayContainer.appendChild(existing);
-                    existing.style.opacity = '1';
-                    // clear its previous slot entry
-                    const prevIndex = parseInt(dropSlot.dataset.index);
-                    userLetters[prevIndex] = null;
+            window.removeEventListener('pointercancel', handlePointerUp);
+            
+            // Restore scrolling
+            document.body.style.overflow = '';
+            document.body.style.touchAction = '';
+            
+            // Find what's under the pointer
+            activeTile.style.pointerEvents = 'none';
+            const elementBelow = document.elementFromPoint(e.clientX, e.clientY);
+            activeTile.style.pointerEvents = '';
+            
+            const targetSlot = elementBelow ? elementBelow.closest('.letter-slot') : null;
+            
+            // Reset tile styles
+            activeTile.style.position = '';
+            activeTile.style.zIndex = '';
+            activeTile.style.left = '';
+            activeTile.style.top = '';
+            activeTile.style.width = '';
+            activeTile.style.height = '';
+            activeTile.classList.remove('dragging');
+            
+            if (targetSlot) {
+                // Move any existing tile back to tray
+                const existingTile = targetSlot.querySelector('.letter-tile');
+                if (existingTile && existingTile !== activeTile) {
+                    tileTrayContainer.appendChild(existingTile);
+                    const oldIdx = parseInt(targetSlot.dataset.index);
+                    userLetters[oldIdx] = null;
                 }
-
-                // clear origin slot if it was inside a slot
-                if (pointerTile._originSlot) {
-                    const originIndex = parseInt(pointerTile._originSlot.dataset.index);
-                    userLetters[originIndex] = null;
-                }
-
-                dropSlot.appendChild(pointerTile);
-                pointerTile.style.position = '';
-                pointerTile.style.left = '';
-                pointerTile.style.top = '';
-                pointerTile.draggable = pointerTile._wasDraggable !== false;
-                // update state
-                const slotIndex = parseInt(dropSlot.dataset.index);
-                userLetters[slotIndex] = pointerTile.dataset.letter;
+                
+                // Place tile in slot
+                targetSlot.appendChild(activeTile);
+                const slotIdx = parseInt(targetSlot.dataset.index);
+                userLetters[slotIdx] = activeTile.dataset.letter;
+                
                 checkForSuccess();
             } else {
-                // return to tray and clear origin slot
-                if (pointerTile._originSlot) {
-                    const originIndex = parseInt(pointerTile._originSlot.dataset.index);
-                    userLetters[originIndex] = null;
-                }
-                pointerTile.style.position = '';
-                pointerTile.style.left = '';
-                pointerTile.style.top = '';
-                pointerTile.draggable = pointerTile._wasDraggable !== false;
-                tileTrayContainer.appendChild(pointerTile);
+                // Return to tray
+                tileTrayContainer.appendChild(activeTile);
             }
-
-            pointerTile = null;
-            activePointer = null;
+            
+            activeTile = null;
+            originParent = null;
         }
-
-        function findNearestSlot(x, y) {
-            const slots = Array.from(document.querySelectorAll('.letter-slot'));
-            let nearest = null;
-            let minDist = Infinity;
-            slots.forEach(s => {
-                const r = s.getBoundingClientRect();
-                const cx = r.left + r.width / 2;
-                const cy = r.top + r.height / 2;
-                const d = Math.hypot(cx - x, cy - y);
-                if (d < minDist && d < 160) { // threshold increased for easier snapping
-                    minDist = d;
-                    nearest = s;
-                }
-            });
-            return nearest;
-        }
-
-        function preventDefaultTouch(e) {
-            e.preventDefault();
-        }
-        
-        // Event listener for the tileTray to allow returning tiles from slots
-        tileTrayContainer.addEventListener('dragover', handleDragOver);
-        tileTrayContainer.addEventListener('drop', (e) => {
-            e.preventDefault();
-                    // restore scrolling
-                    document.body.style.overflow = '';
-            const sourceId = e.dataTransfer.getData('sourceId');
-            const draggedTile = document.getElementById(sourceId);
-
-            if (draggedTile) {
-                const parentSlot = draggedTile.closest('.letter-slot');
-                if (parentSlot) {
-                    const slotIndex = parseInt(parentSlot.dataset.index);
-                    userLetters[slotIndex] = null;
-                }
-                
-                // Remove correct styling when returning to tray
-                draggedTile.classList.remove('correct');
-                
-                tileTrayContainer.appendChild(draggedTile);
-                draggedTile.style.opacity = '1';
-            }
-        });
 
 
         /**
