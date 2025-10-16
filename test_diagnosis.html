@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Diagnosis Test</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #f0f0f0; }
+        .test { margin: 10px 0; padding: 10px; background: white; border-left: 4px solid #4a90e2; }
+        .error { border-left-color: #e74c3c; background: #ffe6e6; }
+        .success { border-left-color: #27ae60; background: #e6ffe6; }
+        button { padding: 10px 20px; margin: 5px; font-size: 16px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Game Diagnosis Test</h1>
+    <button onclick="runTests()">Run All Tests</button>
+    <div id="results"></div>
+    
+    <script>
+        function log(message, isError = false) {
+            const div = document.createElement('div');
+            div.className = 'test ' + (isError ? 'error' : 'success');
+            div.textContent = message;
+            document.getElementById('results').appendChild(div);
+        }
+        
+        function runTests() {
+            document.getElementById('results').innerHTML = '';
+            
+            // Test 1: Check if main page loads
+            log('Test 1: Checking if Childrens_game.html loads...');
+            fetch('Childrens_game.html')
+                .then(r => {
+                    if (r.ok) {
+                        log('✓ Main page loads (Status: ' + r.status + ')');
+                        return r.text();
+                    } else {
+                        log('✗ Main page failed to load (Status: ' + r.status + ')', true);
+                    }
+                })
+                .then(html => {
+                    if (!html) return;
+                    
+                    // Test 2: Check for WORDS array
+                    if (html.includes('const WORDS = [')) {
+                        log('✓ WORDS array found');
+                    } else {
+                        log('✗ WORDS array missing', true);
+                    }
+                    
+                    // Test 3: Check for pointer handlers
+                    if (html.includes('handlePointerDown')) {
+                        log('✓ Pointer handlers found');
+                    } else {
+                        log('✗ Pointer handlers missing', true);
+                    }
+                    
+                    // Test 4: Check for tile creation
+                    if (html.includes('letter-tile')) {
+                        log('✓ Tile CSS classes found');
+                    } else {
+                        log('✗ Tile CSS missing', true);
+                    }
+                    
+                    // Test 5: Check for dark mode styles
+                    if (html.includes('.dark .letter-tile')) {
+                        log('✓ Dark mode tile styles found');
+                    } else {
+                        log('✗ Dark mode tile styles missing', true);
+                    }
+                    
+                    // Test 6: Syntax check - look for obvious errors
+                    const syntaxIssues = [];
+                    if (html.includes('undefined')) syntaxIssues.push('undefined references');
+                    if ((html.match(/{/g) || []).length !== (html.match(/}/g) || []).length) {
+                        syntaxIssues.push('Mismatched curly braces');
+                    }
+                    
+                    if (syntaxIssues.length > 0) {
+                        log('✗ Potential syntax issues: ' + syntaxIssues.join(', '), true);
+                    } else {
+                        log('✓ No obvious syntax errors detected');
+                    }
+                    
+                    // Test 7: Try to load in iframe
+                    log('Test 7: Loading game in test frame...');
+                    const iframe = document.createElement('iframe');
+                    iframe.style.width = '100%';
+                    iframe.style.height = '600px';
+                    iframe.style.border = '2px solid #4a90e2';
+                    iframe.style.marginTop = '20px';
+                    iframe.src = 'Childrens_game.html';
+                    
+                    iframe.onload = () => {
+                        log('✓ Game loaded in iframe successfully');
+                        
+                        setTimeout(() => {
+                            try {
+                                const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                                const tiles = iframeDoc.querySelectorAll('.letter-tile');
+                                
+                                if (tiles.length > 0) {
+                                    log('✓ Found ' + tiles.length + ' letter tiles in the game');
+                                    
+                                    // Check if tiles are visible
+                                    const firstTile = tiles[0];
+                                    const computed = iframe.contentWindow.getComputedStyle(firstTile);
+                                    const display = computed.display;
+                                    const visibility = computed.visibility;
+                                    const opacity = computed.opacity;
+                                    
+                                    log('Tile display: ' + display + ', visibility: ' + visibility + ', opacity: ' + opacity);
+                                    
+                                    if (display !== 'none' && visibility !== 'hidden' && opacity !== '0') {
+                                        log('✓ Tiles are visible');
+                                    } else {
+                                        log('✗ Tiles exist but are hidden!', true);
+                                    }
+                                } else {
+                                    log('✗ No letter tiles found in DOM!', true);
+                                }
+                            } catch (e) {
+                                log('✗ Error inspecting iframe: ' + e.message, true);
+                            }
+                        }, 2000);
+                    };
+                    
+                    iframe.onerror = () => {
+                        log('✗ Game failed to load in iframe', true);
+                    };
+                    
+                    document.body.appendChild(iframe);
+                })
+                .catch(err => {
+                    log('✗ Fetch error: ' + err.message, true);
+                });
+        }
+        
+        // Auto-run on load
+        setTimeout(runTests, 500);
+    </script>
+</body>
+</html>

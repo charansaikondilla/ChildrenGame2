@@ -610,18 +610,13 @@
             wordImage.style.display = 'none';
             wordImage.src = svgDataUrl;
 
-            // 3. Create Word Slots (Unchanged logic)
+            // 3. Create Word Slots
             wordSlotsContainer.innerHTML = '';
             for (let i = 0; i < word.length; i++) {
                 const slot = document.createElement('div');
                 slot.className = 'letter-slot';
                 slot.dataset.index = i;
                 slot.dataset.correctLetter = word[i];
-
-                slot.addEventListener('dragover', handleDragOver);
-                slot.addEventListener('drop', handleDrop);
-                slot.addEventListener('dragleave', handleDragLeave);
-                slot.addEventListener('dragenter', handleDragEnter);
                 
                 wordSlotsContainer.appendChild(slot);
             }
@@ -678,7 +673,6 @@
         }
 
 
-        // --- Simple Pointer-based drag (works on all devices) ---
         // --- Simple Pointer-based drag (works on all devices) ---
         let activeTile = null;
         let offsetX = 0, offsetY = 0;
