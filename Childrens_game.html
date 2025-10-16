@@ -133,6 +133,17 @@
             border: 2px dashed rgba(74,144,226,0.3);
         }
 
+        .dark .letter-tile {
+            background-color: var(--tile-bg-dark);
+            color: var(--text-dark);
+            border-color: rgba(74,144,226,0.8);
+        }
+
+        .dark .tile-tray {
+            background-color: #1a2332;
+            border-top-color: #2a3544;
+        }
+
         .word-slots {
             display: flex;
             justify-content: center;
@@ -228,6 +239,8 @@
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
             transition: transform 0.1s, box-shadow 0.1s;
             border: 3px solid var(--primary-color);
+            touch-action: none;
+            user-select: none;
         }
 
         .letter-tile:hover {
