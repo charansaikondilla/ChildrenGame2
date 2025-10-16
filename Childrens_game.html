@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alphabet Drag Spell</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        /* General Setup */
+        :root {
+            --bg-color-light: #f0f4f7; /* Light Blue/Gray Background */
+            --bg-color-dark: #0f1724; /* Dark background */
+            --text-light: #111827;
+            --text-dark: #e6eef8;
+            --card-light: linear-gradient(145deg, #ffffff, #f0f0f0);
+            --card-dark: linear-gradient(145deg, #0b1220, #112033);
+            --tile-bg-light: #ffffff;
+            --tile-bg-dark: #15202b;
+            --slot-bg-light: #cfd8dc;
+            --slot-bg-dark: #1f2a36;
+            --accent-color: #f5a623; /* Orange/Hint */
+            --primary-color: #4a90e2; /* Blue */
+            --secondary-color: #7ed321; /* Green */
+            --primary-color: #4a90e2; /* Blue */
+            --secondary-color: #7ed321; /* Green */
+            --accent-color: #f5a623; /* Orange/Hint */
+            --bg-color: #f0f4f7; /* Light Blue/Gray Background */
+            --tile-bg: #ffffff;
+            --slot-bg: #cfd8dc;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: var(--bg-color-light);
+            color: var(--text-light);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            text-align: center;
+            user-select: none; /* Prevent text selection */
+            transition: background-color 0.25s, color 0.25s;
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 800px;
+            background: var(--card-light);
+            border-radius: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            padding: 30px;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            font-weight: 900;
+            margin-bottom: 5px;
+            font-size: 2.5rem;
+        }
+
+        p.info-text {
+            color: #555;
+            margin-bottom: 25px;
+            font-size: 1.1rem;
+        }
+
+        /* Image and Word Slots Area */
+        .display-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 40px;
+        }
+
+        /* Container for slots and hint button */
+        .word-slots-and-hint {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px; /* Space between slots and button */
+        }
+
+        /* New styles for the self-contained image display */
+        #wordImage {
+            width: 150px;
+            height: 150px;
+            border-radius: 15px;
+            border: 5px solid var(--accent-color);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            background-color: #fff;
+            object-fit: cover;
+        }
+        /* Emoji fallback when image is missing or for stylistic preference */
+        #wordEmoji {
+            width: 150px;
+            height: 150px;
+            border-radius: 15px;
+            border: 5px solid var(--accent-color);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            background-color: #fff;
+            display: none; /* hidden until needed */
+            align-items: center;
+            justify-content: center;
+            font-size: 72px;
+            line-height: 1;
+        }
+
+        /* Dark mode styles */
+        .dark {
+            background-color: var(--bg-color-dark);
+            color: var(--text-dark);
+        }
+
+        .dark .game-container {
+            background: var(--card-dark);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+        }
+
+        .dark #wordImage,
+        .dark #wordEmoji {
+            background-color: var(--tile-bg-dark);
+            border: 5px solid rgba(245,166,35,0.9);
+        }
+
+        .dark .letter-slot {
+            background-color: var(--slot-bg-dark);
+            color: var(--text-dark);
+            border: 2px dashed rgba(74,144,226,0.3);
+        }
+
+        .word-slots {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .letter-slot {
+            width: 50px;
+            height: 60px;
+            background-color: var(--slot-bg);
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2rem;
+            color: #333;
+            font-weight: 700;
+            border: 2px dashed var(--primary-color);
+            transition: all 0.2s ease;
+        }
+
+        .letter-slot.hovered {
+            background-color: #c0d8f0;
+            border: 2px solid var(--primary-color);
+            transform: scale(1.05);
+        }
+
+        /* New Hint Display Style */
+        #hintDisplay {
+            min-height: 1.5rem; /* Ensure space even when empty */
+            color: #6a6a6a;
+            font-size: 1.2rem;
+            font-weight: 700;
+            text-align: center;
+            margin-top: 5px; 
+            border: 1px dashed #ccc;
+            padding: 8px 15px;
+            border-radius: 8px;
+            background-color: #fff8e1; /* Light yellow background */
+            transition: opacity 0.3s;
+            opacity: 0; /* Hidden by default */
+        }
+
+        /* Hint Button Style */
+        .hint-button {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 1rem;
+            font-weight: 700;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        .hint-button:hover:not(:disabled) {
+            background-color: #e5941c;
+            transform: translateY(-2px);
+        }
+
+        .hint-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            filter: grayscale(50%);
+        }
+
+        /* Draggable Letter Tiles Area */
+        .tile-tray {
+            padding: 20px;
+            border-top: 2px solid #ddd;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            background-color: #e3e8ec;
+            border-radius: 0 0 25px 25px;
+        }
+
+        .letter-tile {
+            width: 60px;
+            height: 60px;
+            background-color: var(--tile-bg);
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2.2rem;
+            color: var(--primary-color);
+            font-weight: 900;
+            cursor: grab;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+            transition: transform 0.1s, box-shadow 0.1s;
+            border: 3px solid var(--primary-color);
+        }
+
+        .letter-tile:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .letter-tile:active {
+            cursor: grabbing;
+            transform: scale(0.95);
+        }
+
+        .letter-tile.correct {
+            background-color: var(--secondary-color);
+            color: white;
+            border-color: #5cb85c;
+            animation: bounce 0.5s;
+        }
+
+        /* Message Box (unchanged) */
+        #messageBox {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: none; 
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+
+        .message-content {
+            background: var(--tile-bg);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+            transform: scale(0.8);
+            animation: popIn 0.3s forwards;
+            max-width: 90%;
+            min-width: 300px;
+        }
+
+        .message-content h2 {
+            color: var(--secondary-color);
+            font-size: 3rem;
+            margin-top: 0;
+            animation: textGlow 1s infinite alternate;
+        }
+
+        #nextButton {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        #nextButton:hover {
+            background-color: #3b73b9;
+            transform: translateY(-2px);
+        }
+
+        /* Animations (unchanged) */
+        @keyframes popIn {
+            to { transform: scale(1); }
+        }
+
+        @keyframes textGlow {
+            from { text-shadow: 0 0 5px var(--secondary-color), 0 0 10px var(--secondary-color); }
+            to { text-shadow: 0 0 10px var(--secondary-color), 0 0 20px var(--secondary-color); }
+        }
+        
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
+        }
+
+        /* Responsive Adjustments (unchanged) */
+        @media (max-width: 600px) {
+            .game-container {
+                padding: 20px 15px;
+            }
+            h1 {
+                font-size: 2rem;
+            }
+            .letter-slot, .letter-tile {
+                width: 45px;
+                height: 55px;
+                font-size: 1.8rem;
+            }
+            .word-slots, .tile-tray {
+                gap: 8px;
+            }
+            #wordImage {
+                width: 120px;
+                height: 120px;
+                font-size: 60px;
+            }
+            .message-content h2 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <h1><i class="fas fa-puzzle-piece" style="color: var(--accent-color);"></i> Word Explorer!</h1>
+        <p class="info-text">Drag the letters below to the correct slots to spell the word!</p>
+
+        <div class="display-area">
+            <div id="wordEmoji" aria-hidden="true"></div>
+            <img id="wordImage" alt="Word Image Placeholder" /> 
+            
+            <div class="word-slots-and-hint">
+                <div class="word-slots" id="wordSlots">
+                    <!-- Letter slots will be generated here -->
+                </div>
+                <!-- HINT DISPLAY AREA -->
+                <div id="hintDisplay"></div>
+                
+                <button id="hintButton" class="hint-button">
+                    <i class="fas fa-lightbulb"></i> Show Hint
+                </button>
+            </div>
+        </div>
+
+        <div class="tile-tray" id="tileTray">
+            <!-- Draggable letter tiles will be generated here -->
+        </div>
+    </div>
+
+    <!-- Audio Controls -->
+    <div style="position: fixed; left: 16px; bottom: 16px; display:flex; gap:10px; z-index:999"> 
+        <button id="musicToggle" title="Toggle background music">🔊 Music</button>
+        <button id="sfxToggle" title="Toggle sound effects">🎵 SFX</button>
+    </div>
+
+    <!-- Dark mode toggle -->
+    <div style="position: fixed; right: 16px; bottom: 16px; z-index:999"> 
+        <button id="themeToggle" title="Toggle dark mode">🌙 Theme</button>
+    </div>
+
+    <!-- Custom Message Box for Success -->
+    <div id="messageBox">
+        <div class="message-content">
+            <h2><i class="fas fa-star" style="color: var(--accent-color);"></i> GREAT JOB!</h2>
+            <p style="font-size: 1.5rem; margin-bottom: 25px;">You correctly spelled: <strong id="successWord" style="color: var(--primary-color);"></strong></p>
+            <button id="nextButton">Next Word <i class="fas fa-arrow-right"></i></button>
+        </div>
+    </div>
+
+    <script>
+        // --- Firebase/App ID Setup (Standard for environment compatibility) ---
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+        // --- Game Data: Expanded to A-Z using real images ---
+        const WORDS = [
+                    { word: "APPLE", emoji: "🍎" },     // A
+                    { word: "BALL", emoji: "⚽" },      // B
+                    { word: "CAT", emoji: "🐱" },       // C
+                    { word: "DOG", emoji: "🐶" },       // D
+                    { word: "EGG", emoji: "🥚" },       // E
+                    { word: "FROG", emoji: "🐸" },      // F
+                    { word: "GIRAFFE", emoji: "🦒" },   // G
+                    { word: "HAT", emoji: "👒" },       // H
+                    { word: "ICE CREAM", emoji: "🍦" }, // I
+                    { word: "JUICE", emoji: "🧃" },     // J
+                    { word: "KITE", emoji: "🪁" },      // K
+                    { word: "LION", emoji: "🦁" },      // L
+                    { word: "MONKEY", emoji: "🐵" },    // M
+                    { word: "NEST", emoji: "🪺" },      // N
+                    { word: "ORANGE", emoji: "🍊" },    // O
+                    { word: "PARROT", emoji: "🦜" },    // P
+                    { word: "QUEEN", emoji: "👸" },     // Q
+                    { word: "RABBIT", emoji: "🐰" },    // R
+                    { word: "SUN", emoji: "☀️" },       // S
+                    { word: "TREE", emoji: "🌳" },      // T
+                    { word: "UMBRELLA", emoji: "☂️" },  // U
+                    { word: "VIOLIN", emoji: "🎻" },    // V
+                    { word: "WHALE", emoji: "🐋" },     // W
+                    { word: "XYLOPHONE", emoji: "🪘" }, // X
+                    { word: "YACHT", emoji: "⛵" },      // Y
+                    { word: "ZEBRA", emoji: "🦓" }      // Z
+        ];
+
+        /**
+         * Create an SVG data URL with a centered emoji to be used as a reliable image.
+         * Returns a data:image/svg+xml;utf8,... URL.
+         */
+        function emojiToDataURL(emoji, size = 300, bg = '#ffffff', circle = true) {
+            const width = size;
+            const height = size;
+            const fontSize = Math.floor(size * 0.55);
+            const circleBg = circle ? `<circle cx="${width/2}" cy="${height/2}" r="${width/2 - 6}" fill="${bg}" stroke="none"/>` : '';
+            const svg = `<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns='http://www.w3.org/2000/svg' width='${width}' height='${height}' viewBox='0 0 ${width} ${height}'>\n  <rect width='100%' height='100%' fill='transparent'/>\n  ${circleBg}\n  <text x='50%' y='50%' font-family='Segoe UI Emoji, Noto Color Emoji, Apple Color Emoji, sans-serif' font-size='${fontSize}' dominant-baseline='middle' text-anchor='middle'>${emoji}</text>\n</svg>`;
+            return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+        }
+
+        let currentWordIndex = 0;
+        let currentWordData = null;
+        let userLetters = [];
+        let draggableLetters = [];
+        
+        // Storage for available voices once loaded
+        let availableVoices = [];
+
+        // --- DOM Elements ---
+        const wordSlotsContainer = document.getElementById('wordSlots');
+        const tileTrayContainer = document.getElementById('tileTray');
+        const wordImage = document.getElementById('wordImage'); 
+        const wordEmoji = document.getElementById('wordEmoji');
+        const messageBox = document.getElementById('messageBox');
+        const nextButton = document.getElementById('nextButton');
+        const successWordDisplay = document.getElementById('successWord');
+        const hintButton = document.getElementById('hintButton'); 
+        const hintDisplay = document.getElementById('hintDisplay'); // NEW element reference
+
+        // --- Helper Functions ---
+
+        /**
+         * Finds and caches available TTS voices, prioritizing female/clear voices.
+         */
+        function initializeVoices() {
+            availableVoices = window.speechSynthesis.getVoices();
+        }
+        
+        // Listen for when voices are loaded by the browser
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.onvoiceschanged = initializeVoices;
+        }
+
+        /**
+         * Speaks the given text using the browser's TTS.
+         * Tries to use a clear female voice for a better teaching experience.
+         * @param {string} text The text to speak.
+         * @param {boolean} spellMode If true, sets a faster rate for spelling letters.
+         */
+        function speak(text, spellMode = false) {
+            if ('speechSynthesis' in window) {
+                // If voices haven't loaded yet, try to load them now
+                if (availableVoices.length === 0) {
+                    initializeVoices();
+                }
+
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'en-US';
+                utterance.rate = spellMode ? 1.0 : 0.8; 
+
+                // Attempt to find a clear, friendly female-sounding voice
+                const targetVoice = availableVoices.find(voice => 
+                    voice.name.toLowerCase().includes('female') || 
+                    voice.name.toLowerCase().includes('google us english') ||
+                    voice.name.toLowerCase().includes('susan') || 
+                    voice.name.toLowerCase().includes('zira')
+                );
+                
+                if (targetVoice) {
+                    utterance.voice = targetVoice;
+                }
+
+                window.speechSynthesis.speak(utterance);
+            } else {
+                console.warn("Text-to-speech not supported in this browser.");
+            }
+        }
+
+        /**
+         * Shuffles an array randomly.
+         */
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // --- Game Logic ---
+
+        /**
+         * Loads the current word and sets up the game board.
+         */
+        function loadWord() {
+            // Stop any ongoing speech when a new word loads
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+            }
+
+            if (currentWordIndex >= WORDS.length) {
+                // Game over for this set!
+                showMessageBox("CONGRATULATIONS!", "You completed all the words!", "Start Over");
+                nextButton.onclick = () => {
+                    currentWordIndex = 0; // Reset
+                    hideMessageBox();
+                    loadWord();
+                };
+                return;
+            }
+
+            currentWordData = WORDS[currentWordIndex];
+            const word = currentWordData.word;
+            userLetters = Array(word.length).fill(null);
+            
+            // 1. Initial Audio: Speak "A for Apple" (e.g., first letter of the word + the word itself)
+            const firstLetter = word.charAt(0);
+            speak(`${firstLetter} for ${word}`);
+
+            // 2. Update Icon/Image (Uses image URL now)
+            // Render emoji SVG and set it as the image source so it always loads reliably.
+            const emoji = currentWordData.emoji || '';
+            // Choose emoji SVG background based on current theme
+            const isDark = document.body.classList.contains('dark');
+            const svgBg = isDark ? '#15202b' : '#ffffff';
+            const svgDataUrl = emojiToDataURL(emoji, 300, svgBg, true);
+            wordImage.onload = () => {
+                wordEmoji.style.display = 'none';
+                wordImage.style.display = 'block';
+            };
+            wordImage.onerror = () => {
+                wordImage.style.display = 'none';
+                wordEmoji.style.display = 'flex';
+            };
+            // Show the emoji fallback element while the SVG image is loading
+            wordEmoji.textContent = emoji;
+            wordEmoji.style.display = 'flex';
+            wordImage.style.display = 'none';
+            wordImage.src = svgDataUrl;
+
+            // 3. Create Word Slots (Unchanged logic)
+            wordSlotsContainer.innerHTML = '';
+            for (let i = 0; i < word.length; i++) {
+                const slot = document.createElement('div');
+                slot.className = 'letter-slot';
+                slot.dataset.index = i;
+                slot.dataset.correctLetter = word[i];
+
+                slot.addEventListener('dragover', handleDragOver);
+                slot.addEventListener('drop', handleDrop);
+                slot.addEventListener('dragleave', handleDragLeave);
+                slot.addEventListener('dragenter', handleDragEnter);
+                
+                wordSlotsContainer.appendChild(slot);
+            }
+
+            // 4. Create Draggable Tiles (Unchanged logic)
+            tileTrayContainer.innerHTML = '';
+            let requiredLetters = word.split('');
+            let extraLetters = [];
+            const allAlphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            let uniqueLetters = new Set(requiredLetters);
+            
+            for (let i = 0; extraLetters.length < 3 && i < allAlphabet.length; i++) {
+                const letter = allAlphabet[Math.floor(Math.random() * allAlphabet.length)];
+                if (!uniqueLetters.has(letter) && extraLetters.indexOf(letter) === -1) { 
+                    extraLetters.push(letter);
+                    uniqueLetters.add(letter);
+                }
+            }
+            
+            draggableLetters = shuffleArray([...requiredLetters, ...extraLetters]);
+
+            draggableLetters.forEach((letter, index) => {
+                const tile = document.createElement('div');
+                tile.className = 'letter-tile';
+                tile.textContent = letter;
+                tile.draggable = true;
+                tile.dataset.letter = letter;
+                tile.dataset.originalIndex = index; 
+                tile.id = `tile-${index}-${letter}`;
+                
+                tile.addEventListener('dragstart', handleDragStart);
+                
+                tileTrayContainer.appendChild(tile);
+            });
+            
+            // 5. Setup hint button and display
+            if (hintButton) {
+                // Keep it enabled for repeated use as requested
+                hintButton.disabled = false;
+                hintButton.onclick = showHint;
+            }
+            // Clear and hide hint display for the new word
+            hintDisplay.textContent = '';
+            hintDisplay.style.opacity = '0';
+
+            // Reset message box state
+            hideMessageBox();
+        }
+
+        /**
+         * Displays the correct word as a hint without manipulating tiles.
+         */
+        function showHint() {
+            if (!currentWordData) return;
+            
+            const word = currentWordData.word;
+
+            // 1. Display the hint in the designated area
+            hintDisplay.textContent = `Hint: ${word}`;
+            hintDisplay.style.opacity = '1'; // Show the hint area
+
+            // 2. Speak the word for auditory reinforcement
+            speak(`The word is ${word}`); 
+
+            // IMPORTANT: The hint button is NOT disabled, and no tiles are moved.
+        }
+
+
+        // --- Drag/Drop Handlers (Unchanged for core functionality) ---
+
+        function handleDragStart(e) {
+            e.dataTransfer.setData('text/plain', e.target.dataset.letter);
+            e.dataTransfer.setData('sourceId', e.target.id);
+            setTimeout(() => e.target.style.opacity = '0.5', 0);
+            
+            const parentSlot = e.target.closest('.letter-slot');
+            if (parentSlot) {
+                const slotIndex = parseInt(parentSlot.dataset.index);
+                userLetters[slotIndex] = null;
+                // Remove the 'correct' class if the tile is moved out
+                e.target.classList.remove('correct');
+            }
+        }
+
+        function handleDragEnter(e) {
+            e.preventDefault();
+            if (e.target.classList.contains('letter-slot')) {
+                e.target.classList.add('hovered');
+            }
+        }
+
+        function handleDragLeave(e) {
+            if (e.target.classList.contains('letter-slot')) {
+                e.target.classList.remove('hovered');
+            }
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault(); 
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            const slot = e.target.closest('.letter-slot');
+
+            if (!slot) return;
+            
+            slot.classList.remove('hovered');
+
+            const draggedLetter = e.dataTransfer.getData('text/plain');
+            const sourceId = e.dataTransfer.getData('sourceId');
+            const draggedTile = document.getElementById(sourceId);
+            const slotIndex = parseInt(slot.dataset.index);
+
+            // 1. Return existing tile to the tray if the slot is occupied
+            if (slot.querySelector('.letter-tile')) {
+                const existingTile = slot.querySelector('.letter-tile');
+                tileTrayContainer.appendChild(existingTile);
+                existingTile.style.opacity = '1';
+                existingTile.classList.remove('correct'); // Remove hint/correct styling on return
+            }
+            
+            // 2. Handle the tile movement
+            if (draggedTile) {
+                slot.appendChild(draggedTile);
+                draggedTile.style.opacity = '1';
+                
+                // 3. Update the internal state
+                userLetters[slotIndex] = draggedLetter;
+                
+                // 4. Check for success
+                checkForSuccess();
+            }
+        }
+        
+        // Event listener for the tileTray to allow returning tiles from slots
+        tileTrayContainer.addEventListener('dragover', handleDragOver);
+        tileTrayContainer.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const sourceId = e.dataTransfer.getData('sourceId');
+            const draggedTile = document.getElementById(sourceId);
+
+            if (draggedTile) {
+                const parentSlot = draggedTile.closest('.letter-slot');
+                if (parentSlot) {
+                    const slotIndex = parseInt(parentSlot.dataset.index);
+                    userLetters[slotIndex] = null;
+                }
+                
+                // Remove correct styling when returning to tray
+                draggedTile.classList.remove('correct');
+                
+                tileTrayContainer.appendChild(draggedTile);
+                draggedTile.style.opacity = '1';
+            }
+        });
+
+
+        /**
+         * Checks if the user has completed the word correctly.
+         */
+        function checkForSuccess() {
+            // Check if all slots are filled
+            if (userLetters.includes(null)) {
+                return; // Word is not complete
+            }
+
+            const spelledWord = userLetters.join('');
+            const correctWord = currentWordData.word;
+
+            if (spelledWord === correctWord) {
+                // Success! Speak the entire word for final reinforcement.
+                speak(correctWord, false); 
+                
+                // Highlight the correct letters
+                const slots = wordSlotsContainer.querySelectorAll('.letter-slot');
+                slots.forEach(slot => {
+                    const tile = slot.querySelector('.letter-tile');
+                    if(tile) {
+                       tile.classList.add('correct');
+                    }
+                });
+
+                // Disable hint button on success (to prevent clicking after the word is solved)
+                hintButton.disabled = true;
+                hintDisplay.style.opacity = '0'; // Hide the hint after success
+
+                // Show the success message (pop up)
+                showMessageBox("FANTASTIC!", `You spelled: ${correctWord}`);
+                
+                // Set up the button for the next word
+                nextButton.onclick = handleNextWord;
+
+            } else {
+                console.log("Incorrect attempt.");
+            }
+        }
+
+        /**
+         * Advances the game to the next word.
+         */
+        function handleNextWord() {
+            currentWordIndex++;
+            hideMessageBox();
+            loadWord();
+        }
+
+        /**
+         * Shows the custom message box.
+         */
+        function showMessageBox(title, message, buttonText = "Next Word") {
+            const messageTitle = messageBox.querySelector('h2');
+            messageTitle.textContent = title;
+            successWordDisplay.textContent = message;
+            nextButton.textContent = buttonText;
+            messageBox.style.display = 'flex';
+        }
+
+        /**
+         * Hides the custom message box.
+         */
+        function hideMessageBox() {
+            messageBox.style.display = 'none';
+        }
+
+        // --- Initialization ---
+        // --- Simple in-browser audio (background music + SFX) ---
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        let musicGain = audioContext.createGain();
+        musicGain.gain.value = 0.08; // low volume
+        musicGain.connect(audioContext.destination);
+
+        let sfxGain = audioContext.createGain();
+        sfxGain.gain.value = 0.9;
+        sfxGain.connect(audioContext.destination);
+
+        let musicPlaying = false;
+        let sfxEnabled = true;
+        let musicNodes = [];
+    let musicInterval = null;
+
+        // Simple arpeggiated pad using oscillators
+        function startBackgroundMusic() {
+            if (musicPlaying) return;
+            // Play a light, playful melody using short scheduled oscillators
+            const melody = [440, 523.25, 659.25, 523.25]; // A4, C5, E5, C5
+            let idx = 0;
+            musicInterval = setInterval(() => {
+                const now = audioContext.currentTime;
+                const freq = melody[idx % melody.length];
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, now);
+                gain.gain.setValueAtTime(0.001, now);
+                gain.gain.linearRampToValueAtTime(0.12, now + 0.02);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.36);
+                osc.connect(gain);
+                gain.connect(musicGain);
+                osc.start(now);
+                osc.stop(now + 0.4);
+                musicNodes.push({osc, gain});
+                // prune old nodes periodically
+                if (musicNodes.length > 50) {
+                    const old = musicNodes.splice(0, musicNodes.length - 30);
+                    old.forEach(n => { try { n.osc.disconnect(); } catch(e){}; try { n.gain.disconnect(); } catch(e){}; });
+                }
+                idx++;
+            }, 420);
+            musicPlaying = true;
+        }
+
+        function stopBackgroundMusic() {
+            if (musicInterval) {
+                clearInterval(musicInterval);
+                musicInterval = null;
+            }
+            musicNodes.forEach(n => {
+                try { n.osc.stop(); } catch(e){}
+                try { n.osc.disconnect(); } catch(e){}
+                try { n.gain.disconnect(); } catch(e){}
+            });
+            musicNodes = [];
+            musicPlaying = false;
+        }
+
+        // Simple chime SFX
+        function playChime() {
+            if (!sfxEnabled) return;
+            const now = audioContext.currentTime;
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(880, now);
+            gain.gain.setValueAtTime(0, now);
+            gain.gain.linearRampToValueAtTime(0.6, now + 0.01);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 1.2);
+            osc.connect(gain);
+            gain.connect(sfxGain);
+            osc.start(now);
+            osc.stop(now + 1.3);
+        }
+
+        // Simple applause (synthesized using noise burst)
+        function playApplause() {
+            if (!sfxEnabled) return;
+            const bufferSize = audioContext.sampleRate * 0.7; // short burst
+            const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize); // decaying noise
+            }
+            const src = audioContext.createBufferSource();
+            src.buffer = buffer;
+            const bandpass = audioContext.createBiquadFilter();
+            bandpass.type = 'bandpass';
+            bandpass.frequency.value = 4000;
+            bandpass.Q.value = 0.6;
+            const gain = audioContext.createGain();
+            gain.gain.value = 0.8;
+            src.connect(bandpass);
+            bandpass.connect(gain);
+            gain.connect(sfxGain);
+            src.start();
+        }
+
+        // Wire UI buttons
+        const musicToggle = document.getElementById('musicToggle');
+        const sfxToggle = document.getElementById('sfxToggle');
+        const themeToggle = document.getElementById('themeToggle');
+
+        // Initialize theme from localStorage
+        function applyTheme(theme) {
+            if (theme === 'dark') {
+                document.body.classList.add('dark');
+                musicGain.gain.value = 0.06;
+                themeToggle.textContent = '🌙 Dark';
+            } else {
+                document.body.classList.remove('dark');
+                musicGain.gain.value = 0.08;
+                themeToggle.textContent = '☀️ Light';
+            }
+            // Refresh current image to match the new background
+            if (currentWordData) {
+                const emoji = currentWordData.emoji || '';
+                const svgBg = document.body.classList.contains('dark') ? '#15202b' : '#ffffff';
+                wordImage.src = emojiToDataURL(emoji, 300, svgBg, true);
+                wordEmoji.textContent = emoji;
+            }
+        }
+
+        const savedTheme = localStorage.getItem('gameTheme') || 'light';
+        applyTheme(savedTheme);
+
+        themeToggle.addEventListener('click', () => {
+            const next = document.body.classList.contains('dark') ? 'light' : 'dark';
+            localStorage.setItem('gameTheme', next);
+            applyTheme(next);
+        });
+
+        musicToggle.addEventListener('click', () => {
+            // Ensure context resumed on user gesture
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+            if (!musicPlaying) {
+                startBackgroundMusic();
+                musicToggle.textContent = '🔈 Music ON';
+            } else {
+                stopBackgroundMusic();
+                musicToggle.textContent = '🔇 Music OFF';
+            }
+        });
+
+        sfxToggle.addEventListener('click', () => {
+            sfxEnabled = !sfxEnabled;
+            sfxToggle.textContent = sfxEnabled ? '🎵 SFX ON' : '🔕 SFX OFF';
+        });
+
+        // Hook applause/chime into success event
+        const originalShowMessageBox = showMessageBox;
+        window.showMessageBox = function(title, message, buttonText = 'Next Word') {
+            if (sfxEnabled) {
+                // play chime then applause
+                playChime();
+                setTimeout(playApplause, 300);
+            }
+            originalShowMessageBox(title, message, buttonText);
+        };
+
+        // --- Initialization ---
+        window.onload = () => {
+             // Ensure voices are initialized before loading the first word
+             if ('speechSynthesis' in window && availableVoices.length === 0) {
+                initializeVoices();
+             }
+             // Set default UI labels
+             musicToggle.textContent = '🔊 Music';
+             sfxToggle.textContent = '🎵 SFX';
+             loadWord(); 
+        };
+    </script>
+</body>
+</html>
