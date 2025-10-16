@@ -245,6 +245,9 @@
             color: white;
             border-color: #5cb85c;
             animation: bounce 0.5s;
+               touch-action: none; /* important for touch dragging */
+               -ms-touch-action: none;
+               user-select: none;
         }
 
         /* Message Box (unchanged) */
@@ -337,7 +340,21 @@
             .message-content h2 {
                 font-size: 2rem;
             }
+               /* Larger touch targets on mobile */
+               #wordImage, #wordEmoji { width: 220px; height: 220px; font-size: 96px; }
+               .letter-tile { width: 72px; height: 72px; font-size: 2.6rem; border-radius: 14px; }
+               .letter-slot { width: 64px; height: 76px; font-size: 2.2rem; }
+               .tile-tray { gap: 14px; padding: 18px; }
         }
+
+            /* Dragging visual state for pointer-based drag */
+            .letter-tile.dragging {
+                position: fixed !important;
+                pointer-events: none;
+                transform: none !important;
+                z-index: 9999;
+                box-shadow: 0 12px 30px rgba(0,0,0,0.35);
+            }
     </style>
 </head>
 <body>
@@ -583,20 +600,9 @@
 
             // 4. Create Draggable Tiles (Unchanged logic)
             tileTrayContainer.innerHTML = '';
+            // Only provide the exact letters needed for the word to avoid confusing children
             let requiredLetters = word.split('');
-            let extraLetters = [];
-            const allAlphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-            let uniqueLetters = new Set(requiredLetters);
-            
-            for (let i = 0; extraLetters.length < 3 && i < allAlphabet.length; i++) {
-                const letter = allAlphabet[Math.floor(Math.random() * allAlphabet.length)];
-                if (!uniqueLetters.has(letter) && extraLetters.indexOf(letter) === -1) { 
-                    extraLetters.push(letter);
-                    uniqueLetters.add(letter);
-                }
-            }
-            
-            draggableLetters = shuffleArray([...requiredLetters, ...extraLetters]);
+            draggableLetters = shuffleArray([...requiredLetters]);
 
             draggableLetters.forEach((letter, index) => {
                 const tile = document.createElement('div');
@@ -608,6 +614,9 @@
                 tile.id = `tile-${index}-${letter}`;
                 
                 tile.addEventListener('dragstart', handleDragStart);
+                tile.addEventListener('dragend', () => { document.body.style.overflow = ''; });
+                // Pointer-based handlers for touch devices
+                tile.addEventListener('pointerdown', handlePointerDown);
                 
                 tileTrayContainer.appendChild(tile);
             });
@@ -648,6 +657,8 @@
         // --- Drag/Drop Handlers (Unchanged for core functionality) ---
 
         function handleDragStart(e) {
+            // lock scrolling during native drag
+            document.body.style.overflow = 'hidden';
             e.dataTransfer.setData('text/plain', e.target.dataset.letter);
             e.dataTransfer.setData('sourceId', e.target.id);
             setTimeout(() => e.target.style.opacity = '0.5', 0);
@@ -680,6 +691,8 @@
 
         function handleDrop(e) {
             e.preventDefault();
+            // restore scrolling
+            document.body.style.overflow = '';
             const slot = e.target.closest('.letter-slot');
 
             if (!slot) return;
@@ -711,11 +724,102 @@
                 checkForSuccess();
             }
         }
+
+        // --- Pointer-based drag (for touch) ---
+        let activePointer = null;
+        let pointerTile = null;
+        let startX = 0, startY = 0;
+
+        function handlePointerDown(e) {
+            // Only left button / touch
+            if (e.button && e.button !== 0) return;
+            e.preventDefault();
+            pointerTile = e.currentTarget;
+            // Lock page scroll while dragging on touch devices
+            document.body.style.overflow = 'hidden';
+            pointerTile.setPointerCapture(e.pointerId);
+            activePointer = e.pointerId;
+            pointerTile.classList.add('dragging');
+            // record offset
+            const rect = pointerTile.getBoundingClientRect();
+            startX = e.clientX - rect.left;
+            startY = e.clientY - rect.top;
+            // move it to body for fixed positioning
+            document.body.appendChild(pointerTile);
+            updateTilePosition(e.clientX, e.clientY);
+            window.addEventListener('pointermove', handlePointerMove);
+            window.addEventListener('pointerup', handlePointerUp);
+        }
+
+        function updateTilePosition(clientX, clientY) {
+            if (!pointerTile) return;
+            pointerTile.style.left = (clientX - startX) + 'px';
+            pointerTile.style.top = (clientY - startY) + 'px';
+            pointerTile.style.width = pointerTile.offsetWidth + 'px';
+        }
+
+        function handlePointerMove(e) {
+            if (e.pointerId !== activePointer) return;
+            e.preventDefault();
+            updateTilePosition(e.clientX, e.clientY);
+        }
+
+        function handlePointerUp(e) {
+            if (e.pointerId !== activePointer) return;
+            try { pointerTile.releasePointerCapture(e.pointerId); } catch(e) {}
+            window.removeEventListener('pointermove', handlePointerMove);
+            window.removeEventListener('pointerup', handlePointerUp);
+            pointerTile.classList.remove('dragging');
+
+            // restore scrolling
+            document.body.style.overflow = '';
+
+            // determine nearest slot under pointer
+            const dropSlot = findNearestSlot(e.clientX, e.clientY);
+            if (dropSlot) {
+                dropSlot.appendChild(pointerTile);
+                pointerTile.style.position = '';
+                pointerTile.style.left = '';
+                pointerTile.style.top = '';
+                // update state
+                const slotIndex = parseInt(dropSlot.dataset.index);
+                userLetters[slotIndex] = pointerTile.dataset.letter;
+                checkForSuccess();
+            } else {
+                // return to tray
+                pointerTile.style.position = '';
+                pointerTile.style.left = '';
+                pointerTile.style.top = '';
+                tileTrayContainer.appendChild(pointerTile);
+            }
+
+            pointerTile = null;
+            activePointer = null;
+        }
+
+        function findNearestSlot(x, y) {
+            const slots = Array.from(document.querySelectorAll('.letter-slot'));
+            let nearest = null;
+            let minDist = Infinity;
+            slots.forEach(s => {
+                const r = s.getBoundingClientRect();
+                const cx = r.left + r.width / 2;
+                const cy = r.top + r.height / 2;
+                const d = Math.hypot(cx - x, cy - y);
+                if (d < minDist && d < 120) { // threshold
+                    minDist = d;
+                    nearest = s;
+                }
+            });
+            return nearest;
+        }
         
         // Event listener for the tileTray to allow returning tiles from slots
         tileTrayContainer.addEventListener('dragover', handleDragOver);
         tileTrayContainer.addEventListener('drop', (e) => {
             e.preventDefault();
+                    // restore scrolling
+                    document.body.style.overflow = '';
             const sourceId = e.dataTransfer.getData('sourceId');
             const draggedTile = document.getElementById(sourceId);
 
