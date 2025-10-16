@@ -43,6 +43,7 @@
             text-align: center;
             user-select: none; /* Prevent text selection */
             transition: background-color 0.25s, color 0.25s;
+            overflow-x: hidden; /* Prevent horizontal scroll */
         }
 
         .game-container {
@@ -365,75 +366,100 @@
 
         /* Responsive Adjustments */
         @media (max-width: 600px) {
+            body {
+                padding: 10px;
+                align-items: flex-start;
+            }
+            
             .game-container {
-                padding: 15px 10px;
+                padding: 20px 12px;
+                margin-top: 80px; /* Space for settings button */
+                margin-bottom: 20px;
+                border-radius: 25px;
+                max-width: 100%;
             }
             h1 {
-                font-size: 1.8rem;
-                margin-bottom: 15px;
+                font-size: 2rem;
+                margin-bottom: 18px;
             }
             #wordImage, #wordEmoji { 
-                width: clamp(120px, 35vw, 180px); 
-                height: clamp(120px, 35vw, 180px); 
-                font-size: clamp(60px, 18vw, 90px); 
-                margin-bottom: 15px;
+                width: clamp(180px, 45vw, 220px); 
+                height: clamp(180px, 45vw, 220px); 
+                font-size: clamp(90px, 22vw, 110px); 
+                margin-bottom: 20px;
+                margin-top: 10px;
+                border-width: 4px;
             }
             .message-content h2 {
                 font-size: 2rem;
             }
             .word-slots {
-                gap: clamp(4px, 1vw, 8px);
+                gap: clamp(5px, 1.2vw, 9px);
                 padding: 0 5px;
             }
             .tile-tray {
-                gap: clamp(8px, 2vw, 12px);
-                padding: 15px 10px;
+                gap: clamp(10px, 2.5vw, 14px);
+                padding: 18px 12px;
+                border-radius: 0 0 25px 25px;
             }
         }
 
         /* Portrait mobile - extra compact for long words */
         @media (max-width: 480px) and (orientation: portrait) {
+            body {
+                padding: 8px;
+                align-items: flex-start;
+            }
             .game-container {
-                padding: 12px 8px;
+                padding: 18px 10px;
+                margin-top: 70px; /* Space for settings button */
+                margin-bottom: 15px;
+                border-radius: 20px;
             }
             h1 {
-                font-size: 1.6rem;
-                margin-bottom: 10px;
+                font-size: 1.9rem;
+                margin-bottom: 15px;
             }
             #wordImage, #wordEmoji { 
-                width: clamp(100px, 30vw, 150px); 
-                height: clamp(100px, 30vw, 150px); 
-                font-size: clamp(50px, 15vw, 75px); 
-                margin-bottom: 12px;
+                width: clamp(160px, 42vw, 200px); 
+                height: clamp(160px, 42vw, 200px); 
+                font-size: clamp(80px, 20vw, 100px); 
+                margin-bottom: 18px;
+                margin-top: 5px;
+                border-width: 3px;
+            }
+            .display-area {
+                margin-bottom: 20px;
             }
             .word-slots {
-                gap: 4px;
+                gap: 5px;
                 max-width: 95vw;
             }
             .letter-slot {
-                width: clamp(32px, 7vw, 45px);
-                height: clamp(42px, 9vw, 55px);
-                font-size: clamp(1.2rem, 3.5vw, 1.8rem);
+                width: clamp(34px, 7.5vw, 48px);
+                height: clamp(44px, 9.5vw, 58px);
+                font-size: clamp(1.3rem, 3.8vw, 1.9rem);
                 border-radius: 8px;
             }
             .word-slots.long-word .letter-slot {
-                width: clamp(28px, 6vw, 40px);
-                height: clamp(38px, 8vw, 50px);
-                font-size: clamp(1rem, 3vw, 1.5rem);
+                width: clamp(30px, 6.5vw, 42px);
+                height: clamp(40px, 8.5vw, 52px);
+                font-size: clamp(1.1rem, 3.2vw, 1.6rem);
             }
             .letter-tile {
-                width: clamp(45px, 9vw, 60px);
-                height: clamp(45px, 9vw, 60px);
-                font-size: clamp(1.6rem, 4vw, 2.2rem);
+                width: clamp(48px, 9.5vw, 64px);
+                height: clamp(48px, 9.5vw, 64px);
+                font-size: clamp(1.7rem, 4.2vw, 2.4rem);
             }
             .tile-tray.long-word .letter-tile {
-                width: clamp(40px, 8vw, 55px);
-                height: clamp(40px, 8vw, 55px);
-                font-size: clamp(1.4rem, 3.5vw, 2rem);
+                width: clamp(42px, 8.5vw, 58px);
+                height: clamp(42px, 8.5vw, 58px);
+                font-size: clamp(1.5rem, 3.8vw, 2.1rem);
             }
             .tile-tray {
-                gap: 6px;
-                padding: 12px 8px;
+                gap: 8px;
+                padding: 15px 10px;
+                border-radius: 0 0 20px 20px;
             }
         }
 
@@ -677,8 +703,12 @@
             @media (max-width: 480px) {
                 .settings-drawer {
                     width: 85vw;
-                    right: -85vw;
+                    right: -85vw; /* Start off-screen */
                     padding: 70px 20px 20px;
+                }
+                
+                .settings-drawer.open {
+                    right: 0; /* Slide in when open */
                 }
                 
                 .settings-button {
@@ -687,6 +717,21 @@
                     top: 16px;
                     right: 16px;
                     font-size: 1.3rem;
+                }
+                
+                /* Ensure drawer elements are responsive */
+                .drawer-control {
+                    padding: 16px;
+                    margin-bottom: 12px;
+                }
+                
+                .drawer-header h2 {
+                    font-size: 1.5rem;
+                }
+                
+                .drawer-button {
+                    padding: 14px;
+                    font-size: 1rem;
                 }
             }
     </style>
@@ -1333,26 +1378,54 @@
         function openDrawer() {
             settingsDrawer.classList.add('open');
             drawerBackdrop.classList.add('visible');
-            document.body.style.overflow = 'hidden'; // Prevent scrolling when drawer open
+            // Prevent scrolling on mobile
+            document.body.style.overflow = 'hidden';
+            document.body.style.position = 'fixed';
+            document.body.style.width = '100%';
         }
 
         function closeDrawer() {
             settingsDrawer.classList.remove('open');
             drawerBackdrop.classList.remove('visible');
-            document.body.style.overflow = ''; // Restore scrolling
+            // Restore scrolling on mobile
+            document.body.style.overflow = '';
+            document.body.style.position = '';
+            document.body.style.width = '';
         }
 
-        // Settings button click
-        settingsButton.addEventListener('click', openDrawer);
+        // Settings button click - works for both mouse and touch
+        settingsButton.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent event bubbling
+            openDrawer();
+        });
 
-        // Backdrop click to close
-        drawerBackdrop.addEventListener('click', closeDrawer);
+        // Backdrop click/touch to close - works for both mouse and touch
+        drawerBackdrop.addEventListener('click', (e) => {
+            e.stopPropagation();
+            closeDrawer();
+        });
+
+        // Touch support for backdrop (mobile)
+        drawerBackdrop.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            closeDrawer();
+        });
 
         // Escape key to close drawer
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && settingsDrawer.classList.contains('open')) {
                 closeDrawer();
             }
+        });
+
+        // Prevent drawer from closing when clicking inside it
+        settingsDrawer.addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
+
+        settingsDrawer.addEventListener('touchend', (e) => {
+            e.stopPropagation();
         });
 
         // Initialize theme from localStorage
@@ -1378,15 +1451,26 @@
         const savedTheme = localStorage.getItem('gameTheme') || 'light';
         applyTheme(savedTheme);
 
-        // Theme toggle
-        themeToggle.addEventListener('click', () => {
+        // Theme toggle - works for both click and touch
+        themeToggle.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent drawer from closing
             const next = document.body.classList.contains('dark') ? 'light' : 'dark';
             localStorage.setItem('gameTheme', next);
             applyTheme(next);
         });
 
-        // Music toggle
-        musicToggle.addEventListener('click', () => {
+        // Add touch support for mobile
+        themeToggle.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const next = document.body.classList.contains('dark') ? 'light' : 'dark';
+            localStorage.setItem('gameTheme', next);
+            applyTheme(next);
+        });
+
+        // Music toggle - works for both click and touch
+        musicToggle.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent drawer from closing
             // Ensure context resumed on user gesture
             if (audioContext.state === 'suspended') {
                 audioContext.resume();
@@ -1400,14 +1484,25 @@
             }
         });
 
-        // SFX toggle
-        sfxToggle.addEventListener('click', () => {
+        musicToggle.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+        });
+
+        // SFX toggle - works for both click and touch
+        sfxToggle.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent drawer from closing
             sfxEnabled = !sfxEnabled;
             if (sfxEnabled) {
                 sfxToggle.classList.add('active');
             } else {
                 sfxToggle.classList.remove('active');
             }
+        });
+
+        sfxToggle.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
         });
 
         // Fullscreen toggle
