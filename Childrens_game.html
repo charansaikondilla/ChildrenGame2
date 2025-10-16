@@ -356,6 +356,13 @@
                 box-shadow: 0 12px 30px rgba(0,0,0,0.35);
             }
 
+            /* Prevent scrolling when class is toggled (used during drag) */
+            html.no-scroll, body.no-scroll {
+                overflow: hidden !important;
+                touch-action: none !important;
+                -ms-touch-action: none !important;
+            }
+
             /* Utility class to lock touch scrolling while dragging */
             .no-scroll, .no-scroll * {
                 touch-action: none !important;
@@ -749,6 +756,9 @@
             document.documentElement.classList.add('no-scroll');
             // record original parent slot (if any)
             pointerTile._originSlot = pointerTile.closest('.letter-slot') || null;
+            // temporarily disable native drag to avoid conflicts
+            pointerTile._wasDraggable = pointerTile.draggable;
+            pointerTile.draggable = false;
             pointerTile.setPointerCapture(e.pointerId);
             activePointer = e.pointerId;
             pointerTile.classList.add('dragging');
@@ -761,6 +771,8 @@
             updateTilePosition(e.clientX, e.clientY);
             window.addEventListener('pointermove', handlePointerMove);
             window.addEventListener('pointerup', handlePointerUp);
+            // prevent touchmove default to stop scrolling on some browsers
+            window.addEventListener('touchmove', preventDefaultTouch, { passive: false });
         }
 
         function updateTilePosition(clientX, clientY) {
@@ -785,6 +797,7 @@
 
             // restore scrolling
             document.documentElement.classList.remove('no-scroll');
+            window.removeEventListener('touchmove', preventDefaultTouch);
 
             // prefer elementFromPoint for accurate detection
             const el = document.elementFromPoint(e.clientX, e.clientY);
@@ -810,6 +823,7 @@
                 pointerTile.style.position = '';
                 pointerTile.style.left = '';
                 pointerTile.style.top = '';
+                pointerTile.draggable = pointerTile._wasDraggable !== false;
                 // update state
                 const slotIndex = parseInt(dropSlot.dataset.index);
                 userLetters[slotIndex] = pointerTile.dataset.letter;
@@ -823,6 +837,7 @@
                 pointerTile.style.position = '';
                 pointerTile.style.left = '';
                 pointerTile.style.top = '';
+                pointerTile.draggable = pointerTile._wasDraggable !== false;
                 tileTrayContainer.appendChild(pointerTile);
             }
 
@@ -839,12 +854,16 @@
                 const cx = r.left + r.width / 2;
                 const cy = r.top + r.height / 2;
                 const d = Math.hypot(cx - x, cy - y);
-                if (d < minDist && d < 120) { // threshold
+                if (d < minDist && d < 160) { // threshold increased for easier snapping
                     minDist = d;
                     nearest = s;
                 }
             });
             return nearest;
+        }
+
+        function preventDefaultTouch(e) {
+            e.preventDefault();
         }
         
         // Event listener for the tileTray to allow returning tiles from slots
