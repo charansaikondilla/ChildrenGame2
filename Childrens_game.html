@@ -355,6 +355,14 @@
                 z-index: 9999;
                 box-shadow: 0 12px 30px rgba(0,0,0,0.35);
             }
+
+            /* Utility class to lock touch scrolling while dragging */
+            .no-scroll, .no-scroll * {
+                touch-action: none !important;
+                overscroll-behavior: none !important;
+                -ms-touch-action: none !important;
+                overflow: hidden !important;
+            }
     </style>
 </head>
 <body>
@@ -608,14 +616,16 @@
                 const tile = document.createElement('div');
                 tile.className = 'letter-tile';
                 tile.textContent = letter;
-                tile.draggable = true;
+                    // disable native drag on touch devices to avoid conflicts
+                    const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints && navigator.maxTouchPoints > 0);
+                    tile.draggable = !isTouchDevice;
                 tile.dataset.letter = letter;
                 tile.dataset.originalIndex = index; 
                 tile.id = `tile-${index}-${letter}`;
                 
                 tile.addEventListener('dragstart', handleDragStart);
                 tile.addEventListener('dragend', () => { document.body.style.overflow = ''; });
-                // Pointer-based handlers for touch devices
+                // Pointer-based handlers for touch devices and mouse
                 tile.addEventListener('pointerdown', handlePointerDown);
                 
                 tileTrayContainer.appendChild(tile);
@@ -736,7 +746,9 @@
             e.preventDefault();
             pointerTile = e.currentTarget;
             // Lock page scroll while dragging on touch devices
-            document.body.style.overflow = 'hidden';
+            document.documentElement.classList.add('no-scroll');
+            // record original parent slot (if any)
+            pointerTile._originSlot = pointerTile.closest('.letter-slot') || null;
             pointerTile.setPointerCapture(e.pointerId);
             activePointer = e.pointerId;
             pointerTile.classList.add('dragging');
@@ -772,11 +784,28 @@
             pointerTile.classList.remove('dragging');
 
             // restore scrolling
-            document.body.style.overflow = '';
+            document.documentElement.classList.remove('no-scroll');
 
-            // determine nearest slot under pointer
-            const dropSlot = findNearestSlot(e.clientX, e.clientY);
+            // prefer elementFromPoint for accurate detection
+            const el = document.elementFromPoint(e.clientX, e.clientY);
+            const dropSlot = el ? el.closest('.letter-slot') : null;
             if (dropSlot) {
+                // if slot already has a tile, move it back to tray
+                const existing = dropSlot.querySelector('.letter-tile');
+                if (existing && existing !== pointerTile) {
+                    tileTrayContainer.appendChild(existing);
+                    existing.style.opacity = '1';
+                    // clear its previous slot entry
+                    const prevIndex = parseInt(dropSlot.dataset.index);
+                    userLetters[prevIndex] = null;
+                }
+
+                // clear origin slot if it was inside a slot
+                if (pointerTile._originSlot) {
+                    const originIndex = parseInt(pointerTile._originSlot.dataset.index);
+                    userLetters[originIndex] = null;
+                }
+
                 dropSlot.appendChild(pointerTile);
                 pointerTile.style.position = '';
                 pointerTile.style.left = '';
@@ -786,7 +815,11 @@
                 userLetters[slotIndex] = pointerTile.dataset.letter;
                 checkForSuccess();
             } else {
-                // return to tray
+                // return to tray and clear origin slot
+                if (pointerTile._originSlot) {
+                    const originIndex = parseInt(pointerTile._originSlot.dataset.index);
+                    userLetters[originIndex] = null;
+                }
                 pointerTile.style.position = '';
                 pointerTile.style.left = '';
                 pointerTile.style.top = '';
