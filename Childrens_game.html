@@ -57,14 +57,8 @@
         h1 {
             color: var(--primary-color);
             font-weight: 900;
-            margin-bottom: 5px;
+            margin-bottom: 20px;
             font-size: 2.5rem;
-        }
-
-        p.info-text {
-            color: #555;
-            margin-bottom: 25px;
-            font-size: 1.1rem;
         }
 
         /* Image and Word Slots Area */
@@ -72,7 +66,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            margin-bottom: 40px;
+            margin-bottom: 30px;
         }
 
         /* Container for slots and hint button */
@@ -147,22 +141,34 @@
         .word-slots {
             display: flex;
             justify-content: center;
-            gap: 10px;
+            align-items: center;
+            gap: clamp(6px, 1.5vw, 12px);
+            flex-wrap: wrap;
+            max-width: 100%;
+            padding: 0 10px;
         }
 
         .letter-slot {
-            width: 50px;
-            height: 60px;
+            width: clamp(40px, 8vw, 56px);
+            height: clamp(50px, 10vw, 70px);
             background-color: var(--slot-bg);
             border-radius: 10px;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 2rem;
+            font-size: clamp(1.5rem, 4vw, 2.2rem);
             color: #333;
             font-weight: 700;
             border: 2px dashed var(--primary-color);
             transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        /* Long word adjustment (applied via JS based on word length) */
+        .word-slots.long-word .letter-slot {
+            width: clamp(35px, 6vw, 48px);
+            height: clamp(45px, 8vw, 60px);
+            font-size: clamp(1.3rem, 3.5vw, 1.9rem);
         }
 
         .letter-slot.hovered {
@@ -225,14 +231,14 @@
         }
 
         .letter-tile {
-            width: 60px;
-            height: 60px;
+            width: clamp(55px, 10vw, 70px);
+            height: clamp(55px, 10vw, 70px);
             background-color: var(--tile-bg);
             border-radius: 12px;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 2.2rem;
+            font-size: clamp(2rem, 4.5vw, 2.6rem);
             color: var(--primary-color);
             font-weight: 900;
             cursor: grab;
@@ -241,6 +247,13 @@
             border: 3px solid var(--primary-color);
             touch-action: none;
             user-select: none;
+        }
+
+        /* Long word tiles (smaller) */
+        .tile-tray.long-word .letter-tile {
+            width: clamp(48px, 8vw, 62px);
+            height: clamp(48px, 8vw, 62px);
+            font-size: clamp(1.8rem, 4vw, 2.3rem);
         }
 
         .letter-tile:hover {
@@ -329,35 +342,78 @@
             60% { transform: translateY(-5px); }
         }
 
-        /* Responsive Adjustments (unchanged) */
+        /* Responsive Adjustments */
         @media (max-width: 600px) {
             .game-container {
-                padding: 20px 15px;
+                padding: 15px 10px;
             }
             h1 {
-                font-size: 2rem;
-            }
-            .letter-slot, .letter-tile {
-                width: 45px;
-                height: 55px;
                 font-size: 1.8rem;
+                margin-bottom: 15px;
             }
-            .word-slots, .tile-tray {
-                gap: 8px;
-            }
-            #wordImage {
-                width: 120px;
-                height: 120px;
-                font-size: 60px;
+            #wordImage, #wordEmoji { 
+                width: clamp(120px, 35vw, 180px); 
+                height: clamp(120px, 35vw, 180px); 
+                font-size: clamp(60px, 18vw, 90px); 
+                margin-bottom: 15px;
             }
             .message-content h2 {
                 font-size: 2rem;
             }
-               /* Larger touch targets on mobile */
-               #wordImage, #wordEmoji { width: 220px; height: 220px; font-size: 96px; }
-               .letter-tile { width: 72px; height: 72px; font-size: 2.6rem; border-radius: 14px; }
-               .letter-slot { width: 64px; height: 76px; font-size: 2.2rem; }
-               .tile-tray { gap: 14px; padding: 18px; }
+            .word-slots {
+                gap: clamp(4px, 1vw, 8px);
+                padding: 0 5px;
+            }
+            .tile-tray {
+                gap: clamp(8px, 2vw, 12px);
+                padding: 15px 10px;
+            }
+        }
+
+        /* Portrait mobile - extra compact for long words */
+        @media (max-width: 480px) and (orientation: portrait) {
+            .game-container {
+                padding: 12px 8px;
+            }
+            h1 {
+                font-size: 1.6rem;
+                margin-bottom: 10px;
+            }
+            #wordImage, #wordEmoji { 
+                width: clamp(100px, 30vw, 150px); 
+                height: clamp(100px, 30vw, 150px); 
+                font-size: clamp(50px, 15vw, 75px); 
+                margin-bottom: 12px;
+            }
+            .word-slots {
+                gap: 4px;
+                max-width: 95vw;
+            }
+            .letter-slot {
+                width: clamp(32px, 7vw, 45px);
+                height: clamp(42px, 9vw, 55px);
+                font-size: clamp(1.2rem, 3.5vw, 1.8rem);
+                border-radius: 8px;
+            }
+            .word-slots.long-word .letter-slot {
+                width: clamp(28px, 6vw, 40px);
+                height: clamp(38px, 8vw, 50px);
+                font-size: clamp(1rem, 3vw, 1.5rem);
+            }
+            .letter-tile {
+                width: clamp(45px, 9vw, 60px);
+                height: clamp(45px, 9vw, 60px);
+                font-size: clamp(1.6rem, 4vw, 2.2rem);
+            }
+            .tile-tray.long-word .letter-tile {
+                width: clamp(40px, 8vw, 55px);
+                height: clamp(40px, 8vw, 55px);
+                font-size: clamp(1.4rem, 3.5vw, 2rem);
+            }
+            .tile-tray {
+                gap: 6px;
+                padding: 12px 8px;
+            }
         }
 
             /* Dragging visual state for pointer-based drag */
@@ -383,13 +439,80 @@
                 -ms-touch-action: none !important;
                 overflow: hidden !important;
             }
+
+            /* Control Bar Styles */
+            .control-bar {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                gap: 12px;
+                padding: 20px;
+                flex-wrap: wrap;
+            }
+
+            .control-bar button {
+                background: linear-gradient(145deg, var(--primary-color), #3a7bc8);
+                color: white;
+                border: none;
+                padding: 12px 24px;
+                font-size: 1rem;
+                font-weight: 600;
+                border-radius: 25px;
+                cursor: pointer;
+                box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
+                transition: all 0.25s ease;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                font-family: 'Inter', sans-serif;
+                min-width: 110px;
+                justify-content: center;
+            }
+
+            .control-bar button:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 6px 16px rgba(74, 144, 226, 0.4);
+            }
+
+            .control-bar button:active {
+                transform: translateY(0);
+            }
+
+            .control-bar button#themeToggle {
+                background: linear-gradient(145deg, var(--accent-color), #d88e1c);
+                box-shadow: 0 4px 12px rgba(245, 166, 35, 0.3);
+            }
+
+            .control-bar button#themeToggle:hover {
+                box-shadow: 0 6px 16px rgba(245, 166, 35, 0.4);
+            }
+
+            .dark .control-bar button {
+                background: linear-gradient(145deg, #1e3a5f, #2a4a7c);
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+            }
+
+            .dark .control-bar button:hover {
+                box-shadow: 0 6px 16px rgba(0, 0, 0, 0.6);
+            }
+
+            @media (max-width: 480px) {
+                .control-bar {
+                    gap: 8px;
+                    padding: 15px 10px;
+                }
+                .control-bar button {
+                    padding: 10px 18px;
+                    font-size: 0.9rem;
+                    min-width: 90px;
+                }
+            }
     </style>
 </head>
 <body>
 
     <div class="game-container">
-        <h1><i class="fas fa-puzzle-piece" style="color: var(--accent-color);"></i> Word Explorer!</h1>
-        <p class="info-text">Drag the letters below to the correct slots to spell the word!</p>
+        <h1><i class="fas fa-puzzle-piece" style="color: var(--accent-color);"></i> Spell It!</h1>
 
         <div class="display-area">
             <div id="wordEmoji" aria-hidden="true"></div>
@@ -413,15 +536,17 @@
         </div>
     </div>
 
-    <!-- Audio Controls -->
-    <div style="position: fixed; left: 16px; bottom: 16px; display:flex; gap:10px; z-index:999"> 
-        <button id="musicToggle" title="Toggle background music">🔊 Music</button>
-        <button id="sfxToggle" title="Toggle sound effects">🎵 SFX</button>
-    </div>
-
-    <!-- Dark mode toggle -->
-    <div style="position: fixed; right: 16px; bottom: 16px; z-index:999"> 
-        <button id="themeToggle" title="Toggle dark mode">🌙 Theme</button>
+    <!-- Control Bar (Music, SFX, Theme Toggle) -->
+    <div class="control-bar">
+        <button id="musicToggle" title="Toggle background music">
+            <i class="fas fa-music"></i> <span>Music</span>
+        </button>
+        <button id="sfxToggle" title="Toggle sound effects">
+            <i class="fas fa-volume-up"></i> <span>SFX</span>
+        </button>
+        <button id="themeToggle" title="Toggle dark mode">
+            <i class="fas fa-moon"></i> <span>Theme</span>
+        </button>
     </div>
 
     <!-- Custom Message Box for Success -->
@@ -619,6 +744,15 @@
                 slot.dataset.correctLetter = word[i];
                 
                 wordSlotsContainer.appendChild(slot);
+            }
+
+            // Apply dynamic sizing for long words (7+ letters)
+            if (word.length >= 7) {
+                wordSlotsContainer.classList.add('long-word');
+                tileTrayContainer.classList.add('long-word');
+            } else {
+                wordSlotsContainer.classList.remove('long-word');
+                tileTrayContainer.classList.remove('long-word');
             }
 
             // 4. Create Draggable Tiles (Unchanged logic)
@@ -963,11 +1097,11 @@
             if (theme === 'dark') {
                 document.body.classList.add('dark');
                 musicGain.gain.value = 0.06;
-                themeToggle.textContent = '🌙 Dark';
+                themeToggle.innerHTML = '<i class="fas fa-sun"></i> <span>Light</span>';
             } else {
                 document.body.classList.remove('dark');
                 musicGain.gain.value = 0.08;
-                themeToggle.textContent = '☀️ Light';
+                themeToggle.innerHTML = '<i class="fas fa-moon"></i> <span>Dark</span>';
             }
             // Refresh current image to match the new background
             if (currentWordData) {
@@ -994,16 +1128,20 @@
             }
             if (!musicPlaying) {
                 startBackgroundMusic();
-                musicToggle.textContent = '🔈 Music ON';
+                musicToggle.innerHTML = '<i class="fas fa-music"></i> <span>ON</span>';
             } else {
                 stopBackgroundMusic();
-                musicToggle.textContent = '🔇 Music OFF';
+                musicToggle.innerHTML = '<i class="fas fa-music"></i> <span>OFF</span>';
             }
         });
 
         sfxToggle.addEventListener('click', () => {
             sfxEnabled = !sfxEnabled;
-            sfxToggle.textContent = sfxEnabled ? '🎵 SFX ON' : '🔕 SFX OFF';
+            if (sfxEnabled) {
+                sfxToggle.innerHTML = '<i class="fas fa-volume-up"></i> <span>ON</span>';
+            } else {
+                sfxToggle.innerHTML = '<i class="fas fa-volume-mute"></i> <span>OFF</span>';
+            }
         });
 
         // Hook applause/chime into success event
@@ -1018,16 +1156,15 @@
         };
 
         // --- Initialization ---
-        window.onload = () => {
-             // Ensure voices are initialized before loading the first word
-             if ('speechSynthesis' in window && availableVoices.length === 0) {
+        // Preload and optimize first load
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initialize voices early
+            if ('speechSynthesis' in window && availableVoices.length === 0) {
                 initializeVoices();
-             }
-             // Set default UI labels
-             musicToggle.textContent = '🔊 Music';
-             sfxToggle.textContent = '🎵 SFX';
-             loadWord(); 
-        };
+            }
+            // Load first word immediately for instant playability
+            loadWord();
+        });
     </script>
 </body>
 </html>
